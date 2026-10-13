@@ -1,0 +1,28 @@
+[project]
+name = "devingui"
+version = "0.1.0"
+requires-python = ">=3.12"
+license = {file = "LICENSE"}
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "websockets==15.0.1",
+    "anyio>=4.14.2,<5",
+    "httpx>=0.28.1,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[build-system]
+requires = ["setuptools==83.0.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["server"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

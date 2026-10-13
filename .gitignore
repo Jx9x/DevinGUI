@@ -1,0 +1,125 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.venv/
+.venv-codex/
+venv/
+env/
+
+# Node.js
+node_modules/
+frontend/dist/
+
+# TypeScript build info
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+frontend/vitest.config.js
+frontend/vitest.config.d.ts
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Devin local config
+.devin/
+
+# Tasks
+.devin/tasks/
+.devin/completed_tasks/
+.devin/logs/
+
+# Zip folder
+Zip/
+*.zip
+
+# Generated/debug artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage/
+playwright-report/
+blob-report/
+*.log
+inspect_out*.txt
+rendered_*.html
+stream_trace*.ndjson
+Tools/_ws_out.txt
+Tools/conversation_locations.txt
+
+# Local session data and agent scratch
+agentSummaries.txt
+Integrating OpenAI OAuth into Devin CLI GUI.md
+devin-cli/
+Tools/chatgpt-web-test/
+
+# Playwright E2E artifacts
+test-results/
+frontend/test-results/
+
+# OS files
+Thumbs.db
+.DS_Store
+Assessment.md
+
+# Credentials, account state, and private conversation data
+.env
+.env.*
+!.env.example
+!.env.*.example
+credentials.toml
+auth.json
+connection.json
+cookies.json
+cookies.txt
+*.pem
+*.key
+*.p12
+*.pfx
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.pkl
+*.pickle
+*.ndjson
+.archive_index.json
+model_registry.json
+pricing_history.json
+transcripts/
+
+# Private diagnostics and development scratch (kept locally)
+/Tools/
+/docs/DevinGUI-*-for-Devin-support.*
+/docs/DevinGUI-authentication-policy-findings.*
+/docs/DevinGUI-cli-environment-diagnostics.txt
+/dump_rendered.py
+/inspect_sessions.py
+/run_workflow.py
+/Official_Update.ps1
+/RESEARCH.md
+/GUI Text Output Positioning Bug.md
+/implement_token_streaming.txt
+/token_stream_convo.txt
+/discord-dm-*
+/image.png
+/package-lock.json
+/scripts/compare-zip.ps1
+/scripts/restore-zip.ps1
+/scripts/zip-project.ps1
+/scripts/extract-conversations.py
+/scripts/filter-stream-trace.py
+
+# Release staging and temporary snapshots
+/public-release/
+/tmpzipout*/
