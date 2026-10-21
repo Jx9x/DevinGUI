@@ -1,13 +1,13 @@
 # Devin GUI
 
 An unofficial, local browser interface for the [Devin CLI](https://docs.devin.ai/cli)
-on Windows. Browse, resume, and export your Devin conversations by project.
+on Windows.
 
 ![Devin GUI showing a conversation with reasoning, tool output, and usage meters](docs/images/screenshot.png)
 
 Not affiliated with Cognition. Uses your own Devin CLI installation and account.
 
-## Pros and cons vs. Devin Local
+## Pros and cons vs. Devin Desktop
 
 ### Pros
 
