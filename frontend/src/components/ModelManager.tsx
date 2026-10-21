@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { X, Minus, Plus, Sparkles } from "lucide-react";
 import type { ModelInfo } from "../types";
-import { groupKeyOf, groupNameOf } from "../modelGroups";
+import { groupKeyOf, groupNameOf, isModelVisible } from "../modelGroups";
 import { ModelBadge } from "./ModelTag";
 
 interface ModelGroup {
@@ -54,8 +54,7 @@ export function ModelManager({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
 
-  // Fast (2x cost) variants are never shown.
-  const visibleModels = useMemo(() => models.filter((m) => !m.is_fast), [models]);
+  const visibleModels = useMemo(() => models.filter(isModelVisible), [models]);
 
   const filtered = visibleModels.filter(
     (m) =>
@@ -163,7 +162,7 @@ export function ModelManager({
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Search models..."
-            className="w-full rounded-md border border-border bg-bg-tertiary px-3 py-1.5 text-xs text-gray-200 placeholder-gray-600 focus:border-accent focus:outline-hidden"
+            className="focus:outline-hidden w-full rounded-md border border-border bg-bg-tertiary px-3 py-1.5 text-xs text-gray-200 placeholder-gray-600 focus:border-accent"
           />
         </div>
 
@@ -238,11 +237,7 @@ export function ModelManager({
                         </button>
                       </div>
                       {group.models.map((m) => (
-                        <ModelManagerRow
-                          key={m.id}
-                          model={m}
-                          onInclude={() => onInclude(m.id)}
-                        />
+                        <ModelManagerRow key={m.id} model={m} onInclude={() => onInclude(m.id)} />
                       ))}
                     </div>
                   )
@@ -261,7 +256,8 @@ export function ModelManager({
         {/* Footer */}
         <div className="border-t border-border px-5 py-2.5 text-xs text-gray-600">
           Click the red dash to exclude a model from the selector. Excluded models won&apos;t appear
-          in the dropdown but remain available here. Fast (2x cost) variants are hidden.
+          in the dropdown but remain available here. Fast variants other than SWE-2 Lightning are
+          hidden.
         </div>
       </div>
     </div>

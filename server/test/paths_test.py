@@ -10,6 +10,7 @@ from uuid import UUID
 
 import pytest
 
+from scripts import export_conversation_to_md as exporter
 from server import paths
 from server.acp_client import ACPClient
 from server.archive_manager import ArchiveManager
@@ -31,6 +32,7 @@ def synthetic_profile(tmp_path, monkeypatch):
     monkeypatch.delenv("DEVINGUI_DEVIN_BIN", raising=False)
     monkeypatch.delenv("DEVIN_ACP_CMD", raising=False)
     monkeypatch.delenv("DEVIN_GUI_ARCHIVE_DIR", raising=False)
+    monkeypatch.delenv("DEVIN_SESSIONS_DIR", raising=False)
     monkeypatch.setattr(Path, "home", lambda: tmp_path / "home")
     monkeypatch.setattr(paths.shutil, "which", lambda name: None)
     monkeypatch.setattr(paths, "_IS_WINDOWS", True)
@@ -60,6 +62,30 @@ def test_shared_defaults_preserve_non_windows_fallbacks(tmp_path, monkeypatch):
     assert _cli_dir() == str(home / ".local" / "share" / "devin" / "cli")
     assert _default_registry_dir() == str(home / ".config" / "devingui")
     assert _default_credentials_path() == home / ".config" / "devin" / "credentials.toml"
+
+
+@pytest.mark.parametrize("appdata", [True, False])
+@pytest.mark.parametrize("relative", [True, False])
+def test_sessions_override_moves_database_but_preserves_other_cli_paths(tmp_path, monkeypatch, appdata, relative):
+    if not appdata:
+        monkeypatch.delenv("APPDATA")
+    config = paths.devin_config_dir()
+    monkeypatch.chdir(tmp_path)
+    sessions_dir = Path("session storage") if relative else tmp_path / "session storage"
+    monkeypatch.setenv("DEVIN_SESSIONS_DIR", str(sessions_dir))
+    expected = str(sessions_dir / "cli" / "sessions.db")
+    assert DBReader().db_path == _default_db_path() == exporter._default_db_path() == expected
+    assert _default_transcripts_dir() == str(config / "cli" / "transcripts")
+    assert exporter._default_transcripts_dir() == str(config / "cli" / "transcripts")
+    assert _default_credentials_path() == config / "credentials.toml"
+    assert _cli_dir() == str(tmp_path / "local" / "devin" / "cli")
+    assert not sessions_dir.exists()
+
+
+def test_empty_sessions_override_preserves_default_database(tmp_path, monkeypatch):
+    monkeypatch.setenv("DEVIN_SESSIONS_DIR", "")
+    expected = str(tmp_path / "roaming" / "devin" / "cli" / "sessions.db")
+    assert _default_db_path() == exporter._default_db_path() == expected
 
 
 def test_executable_override_precedes_path_and_install_location(tmp_path, monkeypatch):

@@ -147,6 +147,22 @@ def test_cli_catalog_derives_defaults_without_mutating_input():
     }]}]}
 
 
+def test_cli_catalog_recognizes_swe2_lightning_without_cache_metadata():
+    models = catalog._parse_cli_model_list({"families": [{
+        "family_uid": "swe-2", "family_label": "SWE-2", "variants": [
+            {"model_uid": "swe-2-high", "label": "SWE-2 High"},
+            {"model_uid": "swe-2-high-lightning", "label": "SWE-2 High Lightning"},
+        ],
+    }, {
+        "family_uid": "swe-1.7-lightning", "variants": [
+            {"model_uid": "swe-1.7-lightning", "label": "SWE-1.7 Lightning"},
+        ],
+    }]})
+    assert models["swe-2-high-lightning"]["is_fast"] is True
+    assert models["swe-2-high-lightning"]["reasoning"] == "high"
+    assert "is_fast" not in models["swe-1.7-lightning"]
+
+
 def test_cli_catalog_keeps_last_duplicate_model_and_checks_fast_variant_family():
     data = {"families": [
         {"family_uid": "base", "variants": [{"model_uid": "model", "label": "Original"}]},

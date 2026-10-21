@@ -187,6 +187,53 @@ def test_cli_only_entry_uses_defaults_and_saved_capabilities(monkeypatch):
     assert {mid for mid, info in reg._data["models"].items() if info["available"]} == {"known", "new"}
 
 
+@pytest.mark.parametrize("level", ["medium", "high", "max"])
+def test_cli_catalog_retains_team_allowed_swe2_lightning_and_its_prices(monkeypatch, level):
+    base = f"swe-2-{level}"
+    lightning = f"{base}-lightning"
+    cached = {lightning: _model(
+        family="swe-2", family_name="SWE-2", reasoning=level, is_fast=True,
+        tags=[], input_price=1.0, cached_input_price=0.1, output_price=5.0,
+    )}
+    reg = _registry(monkeypatch, cached=cached, id_map={lightning: "swe-2"},
+                    allowed={base, lightning}, cli={base: _cli_model(family="swe-2", tags=["Free"])},
+                    models={lightning: _model(available=False, is_new=False)},
+                    excluded_models=[lightning])
+    reg._refresh_from_cache()
+    entry = reg._data["models"][lightning]
+    assert entry["available"] is True
+    assert entry["is_fast"] is True
+    assert entry["reasoning"] == level
+    assert entry["tags"] == []
+    assert (entry["input_price"], entry["cached_input_price"], entry["output_price"]) == (1.0, 0.1, 5.0)
+    assert entry["is_new"] is False
+    assert reg._data["excluded_models"] == [lightning]
+
+
+@pytest.mark.parametrize("cached_id,family,allowed,listed", [
+    ("swe-2-high-lightning", "swe-2", set(), "swe-2-high"),
+    ("swe-2-high-lightning", "swe-2", {"swe-2-high-lightning"}, "other"),
+    ("swe-2-high-lightning", "other", {"swe-2-high-lightning"}, "swe-2-high"),
+    ("other-high-fast", "other", {"other-high-fast"}, "other-high"),
+])
+def test_cli_catalog_does_not_enable_unconfirmed_or_unrelated_fast_models(
+    monkeypatch, cached_id, family, allowed, listed,
+):
+    reg = _registry(monkeypatch, cached={cached_id: _model(family=family, is_fast=True)},
+                    allowed=allowed, cli={listed: _cli_model()},
+                    models={cached_id: _model(available=False)})
+    reg._refresh_from_cache()
+    assert reg._data["models"][cached_id]["available"] is False
+
+
+def test_team_allowlist_without_lightning_cache_metadata_does_not_invent_variant(monkeypatch):
+    reg = _registry(monkeypatch, allowed={"swe-2-high-lightning"}, cli={
+        "swe-2-high": _cli_model(family="swe-2"),
+    })
+    reg._refresh_from_cache()
+    assert set(reg._data["models"]) == {"swe-2-high"}
+
+
 def test_cli_fusion_resolution_sees_unselectable_cache_components(monkeypatch):
     cached = {
         "lead-high": _model(reasoning="high", is_fast=False),

@@ -157,7 +157,7 @@ def test_route_rechecks_readiness_without_changing_health_contract(environment):
         assert client.get("/api/diagnostics?refresh=true").json()["history_ready"] is True
 
 
-@pytest.mark.parametrize("version,status", [("3000.11.3", "ok"), ("3000.12.0", "warning")])
+@pytest.mark.parametrize("version,status", [("3000.11.92", "ok"), ("3000.11.3", "warning"), ("3000.12.0", "warning")])
 def test_cli_probe_records_one_tested_version_and_safe_compaction_probe(tmp_path, monkeypatch, version, status):
     executable = tmp_path / "devin.exe"
     executable.touch()
@@ -168,7 +168,7 @@ def test_cli_probe_records_one_tested_version_and_safe_compaction_probe(tmp_path
     monkeypatch.setattr(cli_diagnostics.subprocess, "run", run)
     result = cli_diagnostics.probe_devin(str(executable), refresh=True)
     assert result["status"] == status
-    assert result["tested_version"] == "3000.11.3"
+    assert result["tested_version"] == "3000.11.92"
     assert result["version"] == version
     assert result["compaction_supported"] is True
     assert run.call_args_list[1].args[0] == [str(executable), "--compaction-thresholds", "1,1,1", "acp", "--help"]
@@ -181,7 +181,7 @@ def test_probe_does_not_forward_cli_stderr(tmp_path, monkeypatch):
     executable = tmp_path / "devin.exe"
     executable.touch()
     monkeypatch.setattr(cli_diagnostics.subprocess, "run", MagicMock(side_effect=[
-        subprocess.CompletedProcess([], 0, "devin 3000.11.3", ""),
+        subprocess.CompletedProcess([], 0, "devin 3000.11.92", ""),
         subprocess.CompletedProcess([], 2, "", "unexpected argument and private-token"),
     ]))
     result = cli_diagnostics.probe_devin(str(executable), refresh=True)

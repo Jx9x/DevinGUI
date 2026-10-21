@@ -42,9 +42,13 @@ restart is needed. The server console prints the same checks at startup.
 | "No Devin session database yet" | Run `devin` once and send a message, then **Retry checks**. |
 | Devin executable not found | Make sure `devin` works in a new terminal, or set `DEVINGUI_DEVIN_BIN` (see [Configuration](#configuration)). |
 | Launcher says setup is missing or out of date | Rerun `setup-devingui.ps1`. |
-| Port 8000 is already in use | Close the other program, or run `.\.venv\Scripts\python.exe run.py --port 8001` and open that port. |
+| Port 8000 is already in use | Stop the previous Devin GUI server with `Ctrl+C` in its server window, then relaunch. If another program owns the port, close it or run `.\.venv\Scripts\python.exe run.py --port 8001` and open that port. |
 | Folder is rejected | Use a plain local folder, not a network drive, symlink, junction, or some synced folders. |
 | CLI version warning | The GUI usually still works. If something breaks, check for a newer GUI release or use the tested CLI version. |
+
+Setup rebuilds files but does not restart an already-running server. After an
+update, stop the old server with `Ctrl+C`, relaunch `start-devingui.bat`, and
+refresh the browser so both the backend and UI use the new version.
 
 ### Reporting an issue
 
@@ -71,6 +75,7 @@ Set these environment variables before starting the server:
 | Variable | Purpose |
 | --- | --- |
 | `DEVINGUI_DEVIN_BIN` | Absolute path to `devin.exe` if it isn't on PATH or in `%LOCALAPPDATA%\devin\cli\bin`. |
+| `DEVIN_SESSIONS_DIR` | Alternate base directory for session history (CLI 3000.11.92+). The database is at `<base>\cli\sessions.db`. Set the same value for the CLI and GUI. Transcripts stay in their default location. |
 | `DEVIN_GUI_ARCHIVE_DIR` | Folder for archived conversation exports. |
 | `DEVINGUI_CODEX_BIN` | Absolute path to the Codex executable (optional integration). |
 
@@ -91,6 +96,11 @@ For the current Windows user:
 | Unsent drafts | Browser storage | Read/write |
 | Archived exports | `Documents\Devin_Chat` | Write |
 
+With `DEVIN_SESSIONS_DIR` set, the GUI reads `cli\sessions.db` under that directory.
+Transcripts and configuration keep the locations listed above. Markdown exports
+follow the same split; an explicit `--db` pointing to a different database still
+uses its adjacent `transcripts` directory.
+
 ## Compatibility with Devin CLI updates
 
 The GUI talks to Devin through the CLI's Agent Client Protocol (ACP), but it also
@@ -99,3 +109,10 @@ releases. Each GUI release is tested against one CLI version, listed in
 [Requirements](../README.md#requirements). Diagnostics warn when your version
 differs and check the database schema, but newer CLI releases can still break
 history display or compaction.
+
+The **3000.11.92** compatibility check covers CLI version/flag parsing, an
+unauthenticated ACP handshake, the CLI's empty database and embedded migrations,
+read-only history and export, and automated ACP/UI regression tests using
+synthetic data. It does not include a signed-in inference run. The new
+`DEVIN_SESSIONS_DIR` option is supported;
+see the [CLI release notes](https://docs.devin.ai/cli/changelog/stable#v3000-11-92).

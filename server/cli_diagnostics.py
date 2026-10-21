@@ -6,17 +6,19 @@ import threading
 import time
 from pathlib import Path
 
-TESTED_CLI_VERSION = "3000.11.3"
+TESTED_CLI_VERSION = "3000.11.92"
 _PROBE_TIMEOUT = 5
+# The CLI can fetch remote feature flags before reporting sign-in.
+_AUTH_PROBE_TIMEOUT = 30
 _CACHE_SECONDS = 60
 _lock = threading.Lock()
 _cached: tuple[tuple[str, int, int], float, dict] | None = None
 
 
-def _run(executable: str, *arguments: str) -> subprocess.CompletedProcess:
+def _run(executable: str, *arguments: str, timeout: float = _PROBE_TIMEOUT) -> subprocess.CompletedProcess:
     return subprocess.run(
         [executable, *arguments], stdin=subprocess.DEVNULL, capture_output=True,
-        text=True, encoding="utf-8", errors="replace", timeout=_PROBE_TIMEOUT,
+        text=True, encoding="utf-8", errors="replace", timeout=timeout,
         **({"creationflags": subprocess.CREATE_NO_WINDOW} if hasattr(subprocess, "CREATE_NO_WINDOW") else {}),
     )
 
@@ -32,7 +34,14 @@ def probe_devin_auth(executable: str) -> dict:
         "message": "Could not confirm Devin CLI sign-in. Run devin auth status under the same Windows account as this server. If logged out, run devin auth login, then retry.",
     }
     try:
-        status = _run(executable, "auth", "status")
+        status = _run(executable, "auth", "status", timeout=_AUTH_PROBE_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        result["message"] = (
+            f"Devin CLI sign-in check timed out after {_AUTH_PROBE_TIMEOUT} seconds. "
+            "The CLI may be waiting on DNS or network services. This does not establish that you are signed out. "
+            "Run devin auth status under the same Windows account as this server, then retry checks."
+        )
+        return result
     except (OSError, subprocess.SubprocessError):
         return result
     lines = status.stdout.strip().splitlines()

@@ -544,7 +544,8 @@ def _parse_cli_model_list(data: Any) -> dict[str, dict]:
         raise ValueError("Model list is empty")
     for mid, entry in models.items():
         # A family named "Fast" is not necessarily a priority variant.
-        base = models.get(mid[:-5]) if mid.endswith("-fast") else None
+        base_id = re.sub(r"-(fast|lightning)$", "", mid)
+        base = models.get(base_id) if base_id != mid else None
         if mid.endswith("-priority") or (base and base["family"] == entry["family"]):
             entry["is_fast"] = True
     return models

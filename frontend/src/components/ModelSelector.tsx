@@ -6,6 +6,7 @@ import {
   defaultFusionId,
   defaultVariantId,
   fusionSelectionOf,
+  isModelVisible,
   resolveFusion,
   type BaseGroup,
   type FusionGroup,
@@ -26,8 +27,7 @@ interface ModelSelectorProps {
 const SELECT_CLASS =
   "h-6 w-full shrink-0 rounded-sm border border-border bg-bg-tertiary px-1 text-xs text-gray-200 focus:border-accent focus:outline-hidden";
 
-const ROW_BASE_CLASS =
-  "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors";
+const ROW_BASE_CLASS = "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors";
 const ROW_SELECTED_CLASS = "border border-accent/30 bg-accent/15";
 const ROW_IDLE_CLASS = "border border-transparent hover:bg-bg-hover";
 
@@ -60,9 +60,7 @@ function BaseModelRow({
     : (group.variants.find((v) => v.id === defaultVariantId(group, lastUsedVariants)) ??
       group.variants[0]);
   return (
-    <div
-      className={`${ROW_BASE_CLASS} ${isSelected ? ROW_SELECTED_CLASS : ROW_IDLE_CLASS}`}
-    >
+    <div className={`${ROW_BASE_CLASS} ${isSelected ? ROW_SELECTED_CLASS : ROW_IDLE_CLASS}`}>
       <button
         data-row-button
         title={group.name}
@@ -75,7 +73,7 @@ function BaseModelRow({
         {group.name}
       </button>
       {group.variants.length > 1 ? (
-        <span className="w-24 shrink-0">
+        <span className="w-36 shrink-0">
           <select
             aria-label={`${group.name} reasoning`}
             className={SELECT_CLASS}
@@ -119,11 +117,8 @@ function FusionModelRow({
   onClose: () => void;
 }) {
   const isSelected = group.combos.some((c) => c.id === selectedModel);
-  const currentComboId = isSelected
-    ? selectedModel!
-    : defaultFusionId(group, lastUsedVariants);
-  const currentCombo =
-    group.combos.find((c) => c.id === currentComboId) ?? group.combos[0];
+  const currentComboId = isSelected ? selectedModel! : defaultFusionId(group, lastUsedVariants);
+  const currentCombo = group.combos.find((c) => c.id === currentComboId) ?? group.combos[0];
   const sel = fusionSelectionOf(currentCombo);
   const sidekick =
     group.sidekicks.find((s) => s.family === sel.sidekickFamily) ?? group.sidekicks[0];
@@ -133,9 +128,7 @@ function FusionModelRow({
   };
 
   return (
-    <div
-      className={`${ROW_BASE_CLASS} ${isSelected ? ROW_SELECTED_CLASS : ROW_IDLE_CLASS}`}
-    >
+    <div className={`${ROW_BASE_CLASS} ${isSelected ? ROW_SELECTED_CLASS : ROW_IDLE_CLASS}`}>
       <button
         data-row-button
         title={group.name}
@@ -227,11 +220,7 @@ export function ModelSelector({
   // selection still displays its name on the trigger.
   const selected = models.find((m) => m.id === selectedModel);
 
-  // Fast (2x cost) variants are hidden everywhere.
-  const { base, fusion } = useMemo(
-    () => buildModelGroups(models.filter((m) => !m.is_fast)),
-    [models]
-  );
+  const { base, fusion } = useMemo(() => buildModelGroups(models.filter(isModelVisible)), [models]);
 
   useEffect(() => {
     if (!open) return;

@@ -23,6 +23,8 @@ REM (the probe only binds; it never connects to or kills the listener)
 call "%PYTHON%" "%~dp0scripts\check_backend_port.py"
 if errorlevel 1 (
     echo [error] Port 8000 is already in use or could not be verified.
+    echo [error] If Devin GUI is already running, stop it in its server window with Ctrl+C.
+    echo [error] Rebuilding updates files but does not restart an existing server.
     echo [error] Resolve that first and run start-devingui.bat again.
     pause
     exit /b 1

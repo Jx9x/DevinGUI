@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Export a Devin CLI conversation to Markdown.
 
-Reads Devin's ``sessions.db`` (and an optional per-session transcript JSON
-in the same directory) and writes a user-facing Markdown file. By default
-only the user's prompts and the model's non-reasoning output are included.
-Use the flags below to include reasoning, tool calls, and tool outputs.
+Reads Devin's ``sessions.db`` and optional per-session transcript JSON, then
+writes a user-facing Markdown file. The default database uses the CLI's
+transcript location; other databases use an adjacent ``transcripts`` directory.
+By default only the user's prompts and the model's non-reasoning output are
+included. Use the flags below to include reasoning, tool calls, and tool outputs.
 
 Examples
 --------
@@ -31,6 +32,14 @@ from pathlib import Path, PureWindowsPath
 from typing import Any
 from urllib.parse import quote
 
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from server.paths import (
+    default_db_path as _default_db_path,
+    default_transcripts_dir as _default_transcripts_dir,
+)
+
 EXPORT_DESTINATION_EXISTS = 3
 EXPORT_DESTINATION_INVALID = 4
 
@@ -38,13 +47,6 @@ _SUMMARY_MARKERS = (
     "Conversation to summarize:",
     "Now summarize the conversation above",
 )
-
-
-def _default_db_path() -> str:
-    appdata = os.environ.get("APPDATA", "")
-    if appdata:
-        return os.path.join(appdata, "devin", "cli", "sessions.db")
-    return os.path.expanduser("~/.config/devin/cli/sessions.db")
 
 
 def _safe_json(raw: Any) -> Any:
@@ -231,7 +233,12 @@ def _list_sessions(conn: sqlite3.Connection, limit: int = 50) -> list[dict]:
 
 
 def _load_transcript(db_path: str, session_id: str) -> list[dict] | None:
-    transcript_path = Path(db_path).parent / "transcripts" / f"{session_id}.json"
+    if Path(db_path).resolve() == Path(_default_db_path()).resolve():
+        # The CLI's transcript location does not follow database relocation.
+        transcript_dir = Path(_default_transcripts_dir())
+    else:
+        transcript_dir = Path(db_path).parent / "transcripts"
+    transcript_path = transcript_dir / f"{session_id}.json"
     if not transcript_path.exists():
         return None
     try:

@@ -93,6 +93,14 @@ test.describe("fake ACP permission flow (browser → backend → fake ACP)", () 
 
     await page.goto("/");
 
+    const project = path.join(process.env.DEVINGUI_E2E_ROOT!, "project");
+    fs.mkdirSync(project, { recursive: true });
+    await page.getByRole("button", { name: "Choose folder…" }).click();
+    const picker = page.getByRole("dialog", { name: "Choose project folder" });
+    await picker.getByPlaceholder("Type or paste a path…").fill(project);
+    await picker.getByRole("button", { name: "Go", exact: true }).click();
+    await picker.getByRole("button", { name: "Confirm", exact: true }).click();
+
     // Create a new session.
     await page.getByRole("button", { name: "New session" }).first().click();
 

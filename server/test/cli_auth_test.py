@@ -28,7 +28,7 @@ def test_auth_status_handles_zero_exit_and_excludes_account_details(monkeypatch,
     if authenticated is False:
         assert "devin auth login" in result["message"]
     assert run.call_args.args[0] == ["synthetic-devin", "auth", "status"]
-    assert run.call_args.kwargs["timeout"] == 5
+    assert run.call_args.kwargs["timeout"] == 30
     assert run.call_args.kwargs["stdin"] == subprocess.DEVNULL
 
 
@@ -43,6 +43,36 @@ def test_auth_probe_failure_is_unknown_and_does_not_expose_output(monkeypatch, f
     assert result["status"] == "warning"
     assert "devin auth status" in result["message"]
     assert "synthetic-secret" not in str(result)
+
+
+def test_auth_check_allows_slow_cli_initialization(monkeypatch):
+    def slow_status(command, **kwargs):
+        # Model a CLI that spends twelve seconds waiting on startup DNS.
+        if kwargs["timeout"] < 12:
+            raise subprocess.TimeoutExpired(command, kwargs["timeout"])
+        return subprocess.CompletedProcess(command, 0, "Logged in (via Devin).\n", "")
+
+    monkeypatch.setattr(cli_diagnostics.subprocess, "run", slow_status)
+    result = cli_diagnostics.probe_devin_auth("synthetic-devin")
+    assert result["authenticated"] is True
+    assert result["status"] == "ok"
+
+
+def test_auth_timeout_explains_network_delay_without_claiming_logout(monkeypatch):
+    failure = subprocess.TimeoutExpired(
+        "synthetic-devin", 30, output=b"Not logged in.\nAPI key: synthetic-secret",
+        stderr=b"private@example.test",
+    )
+    monkeypatch.setattr(cli_diagnostics.subprocess, "run", MagicMock(side_effect=failure))
+    result = cli_diagnostics.probe_devin_auth("synthetic-devin")
+    assert result["authenticated"] is None
+    assert result["status"] == "warning"
+    assert "timed out after 30 seconds" in result["message"]
+    assert "DNS or network services" in result["message"]
+    assert "does not establish that you are signed out" in result["message"]
+    assert "devin auth login" not in result["message"]
+    assert "synthetic-secret" not in str(result)
+    assert "private@example.test" not in str(result)
 
 
 def test_auth_command_failure_cannot_establish_logout(monkeypatch):

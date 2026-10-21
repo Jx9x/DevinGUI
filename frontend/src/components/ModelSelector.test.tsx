@@ -40,7 +40,13 @@ function opus(id: string, name: string): ModelInfo {
   });
 }
 
-function astraCombo(leadLevel: string, sidekickId: string, skFamily: string, skName: string, skLevel: string): ModelInfo {
+function astraCombo(
+  leadLevel: string,
+  sidekickId: string,
+  skFamily: string,
+  skName: string,
+  skLevel: string
+): ModelInfo {
   return mk(`fusion-gpt-6-astra-${leadLevel}-sidekick-${sidekickId}`, {
     display_name: `GPT-6 Astra + ${skName}`,
     family: "fusion",
@@ -105,6 +111,49 @@ function renderSelector(onSelect = vi.fn()) {
 }
 
 describe("ModelSelector", () => {
+  it("offers SWE-2 Lightning levels while keeping other Fast variants hidden", () => {
+    const models = [
+      ...["medium", "high", "max"].flatMap((level) =>
+        [false, true].map((lightning) =>
+          mk(`swe-2-${level}${lightning ? "-lightning" : ""}`, {
+            display_name: `SWE-2 ${level[0].toUpperCase() + level.slice(1)}${lightning ? " Lightning" : ""}`,
+            family: "swe-2",
+            family_name: "SWE-2",
+            reasoning: level,
+            is_fast: lightning,
+          })
+        )
+      ),
+      ...MODELS,
+    ];
+    const props = {
+      models,
+      selectedModel: "swe-2-high",
+      lastUsedVariants: {},
+      hasNewModels: false,
+      onSelect: vi.fn(),
+      onOpenManager: vi.fn(),
+    };
+    const { rerender } = render(<ModelSelector {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: /SWE-2 High/ }));
+    const select = screen.getByLabelText("SWE-2 reasoning") as HTMLSelectElement;
+    expect(Array.from(select.options, (option) => option.text)).toEqual([
+      "Medium",
+      "Medium Lightning",
+      "High",
+      "High Lightning",
+      "Max",
+      "Max Lightning",
+    ]);
+    expect(select.value).toBe("swe-2-high");
+    expect(screen.queryByText("Claude Fable 5.1 High Fast")).toBeNull();
+    fireEvent.change(select, { target: { value: "swe-2-max-lightning" } });
+    expect(props.onSelect).toHaveBeenCalledWith("swe-2-max-lightning");
+    rerender(<ModelSelector {...props} selectedModel="swe-2-max-lightning" />);
+    expect(screen.getByRole("button", { name: /SWE-2 Max Lightning/ })).toBeTruthy();
+    expect(select.value).toBe("swe-2-max-lightning");
+  });
+
   it("renders one row per group with an inline reasoning dropdown", () => {
     const { container } = renderSelector();
     fireEvent.click(screen.getByRole("button", { name: /Claude Fable 5.1 High/ }));
@@ -173,9 +222,7 @@ describe("ModelSelector", () => {
         onOpenManager={vi.fn()}
       />
     );
-    const trigger = document.querySelector(
-      'button[aria-haspopup="true"]'
-    ) as HTMLButtonElement;
+    const trigger = document.querySelector('button[aria-haspopup="true"]') as HTMLButtonElement;
     fireEvent.click(trigger);
 
     // Single-variant base group: row present, no reasoning dropdown.

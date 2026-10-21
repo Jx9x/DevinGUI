@@ -7,6 +7,7 @@ import json
 import os
 import sqlite3
 import stat
+import subprocess
 import sys
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -40,6 +41,62 @@ def export_db(tmp_path):
             (1, "s-1", json.dumps({"role": "user", "content": "Short DB text"})),
         )
     return db_path
+
+
+@pytest.mark.parametrize("database_form", ["default", "absolute", "parent", "relative"])
+def test_relocated_database_export_keeps_original_transcripts(
+    tmp_path, export_db, monkeypatch, capsys, database_form,
+):
+    sessions_dir = tmp_path / "relocated sessions"
+    database = sessions_dir / "cli" / "sessions.db"
+    database.parent.mkdir(parents=True)
+    database.write_bytes(export_db.read_bytes())
+    monkeypatch.setenv("DEVIN_SESSIONS_DIR", str(sessions_dir))
+    monkeypatch.setenv("APPDATA", str(tmp_path / "roaming"))
+    transcript_dir = tmp_path / "roaming" / "devin" / "cli" / "transcripts"
+    transcript_dir.mkdir(parents=True)
+    (transcript_dir / "s-1.json").write_text(json.dumps({"steps": [
+        {"source": "user", "message": "Original transcript prompt"},
+        {"source": "agent", "message": "Original transcript answer"},
+    ]}), encoding="utf-8")
+    before = database.read_bytes()
+    arguments = [exporter.__file__, "s-1", "--exact", "--preview-json"]
+    if database_form == "absolute":
+        arguments.extend(["--db", str(database)])
+    elif database_form == "parent":
+        arguments.extend(["--db", str(database.parent / ".." / "cli" / database.name)])
+    elif database_form == "relative":
+        monkeypatch.chdir(tmp_path)
+        arguments.extend(["--db", str(Path("relocated sessions") / "cli" / ".." / "cli" / database.name)])
+    monkeypatch.setattr(sys, "argv", arguments)
+
+    assert exporter.main() == 0
+
+    result = json.loads(capsys.readouterr().out)
+    assert "Original transcript answer" in result["markdown"]
+    assert "Short DB text" not in result["markdown"]
+    assert database.read_bytes() == before
+
+
+def test_export_script_runs_without_an_installed_package(tmp_path):
+    result = subprocess.run(
+        [sys.executable, "-I", "-S", exporter.__file__, "--help"],
+        cwd=tmp_path, capture_output=True, text=True, check=True,
+    )
+    assert "--db" in result.stdout
+
+
+def test_explicit_database_export_keeps_adjacent_transcripts(tmp_path, export_db, monkeypatch):
+    monkeypatch.setenv("DEVIN_SESSIONS_DIR", str(tmp_path / "different sessions"))
+    transcript_dir = export_db.parent / "transcripts"
+    transcript_dir.mkdir()
+    (transcript_dir / "s-1.json").write_text(json.dumps({"steps": [
+        {"source": "agent", "message": "Adjacent transcript answer"},
+    ]}), encoding="utf-8")
+
+    messages = exporter._load_messages(str(export_db), "s-1", prefer_transcript=True)
+
+    assert messages[0]["content"] == "Adjacent transcript answer"
 
 
 def test_export_preview_counts_selected_markdown_and_save_matches(tmp_path, export_db):

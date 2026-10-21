@@ -27,6 +27,7 @@ ISOLATED_ENV_VARS = (
     "USERPROFILE",
     "XDG_CONFIG_HOME",
     "XDG_DATA_HOME",
+    "DEVIN_SESSIONS_DIR",
     "DEVIN_GUI_ARCHIVE_DIR",
     "DEVINGUI_CHATGPT_PROFILE",
     "DEVINGUI_CODEX_BIN",
@@ -45,9 +46,10 @@ def preserved_env():
     os.chdir(cwd)
 
 
-def test_configure_profile_redirects_all_paths_under_root(tmp_path, preserved_env):
+def test_configure_profile_redirects_all_paths_under_root(tmp_path, preserved_env, monkeypatch):
     root = tmp_path / "run-root"
     root.mkdir()
+    monkeypatch.setenv("DEVIN_SESSIONS_DIR", str(tmp_path / "outside-run-root"))
 
     helper.configure_profile(root)
 
@@ -56,6 +58,7 @@ def test_configure_profile_redirects_all_paths_under_root(tmp_path, preserved_en
         assert value.is_relative_to(root), f"{var} escaped the run root: {value}"
         assert not value.is_relative_to(_REPO_ROOT), f"{var} still points at the repo"
     assert os.environ["DEVIN_GRACE_SECONDS"] == "0"
+    assert DBReader().db_path == str(root / "appdata" / "devin" / "cli" / "sessions.db")
     assert os.environ["DEVINGUI_CODEX_BIN"].endswith("disabled-codex.exe")
     assert not Path(os.environ["DEVINGUI_CODEX_BIN"]).exists()
     assert os.environ["DEVINGUI_DEVIN_BIN"].endswith("disabled-devin.exe")

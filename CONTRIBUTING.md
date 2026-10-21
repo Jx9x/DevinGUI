@@ -38,6 +38,7 @@ To be safe, run them in a terminal where:
 
 - `APPDATA`, `LOCALAPPDATA`, `HOME`, and `USERPROFILE` point at a temporary folder
 - `DEVINGUI_DEVIN_BIN` points at a nonexistent path
+- `DEVIN_SESSIONS_DIR` is unset or points inside the temporary folder
 
 End-to-end tests:
 

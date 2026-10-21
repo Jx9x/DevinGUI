@@ -30,6 +30,9 @@ def gui_data_dir() -> str:
 
 
 def default_db_path() -> str:
+    sessions_dir = os.environ.get("DEVIN_SESSIONS_DIR")
+    if sessions_dir:
+        return str(Path(sessions_dir) / "cli" / "sessions.db")
     return str(devin_config_dir() / "cli" / "sessions.db")
 
 

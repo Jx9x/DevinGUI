@@ -69,6 +69,7 @@ def configure_profile(root: Path) -> None:
     os.environ["USERPROFILE"] = str(directories["home"])
     os.environ["XDG_CONFIG_HOME"] = str(directories["config"])
     os.environ["XDG_DATA_HOME"] = str(directories["data"])
+    os.environ["DEVIN_SESSIONS_DIR"] = str(directories["appdata"] / "devin")
     os.environ["DEVIN_GUI_ARCHIVE_DIR"] = str(directories["archives"])
     os.environ["DEVINGUI_CHATGPT_PROFILE"] = str(directories["companion"])
     os.environ["DEVINGUI_CODEX_BIN"] = str(root / "disabled-codex.exe")

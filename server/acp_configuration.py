@@ -26,7 +26,7 @@ def model_controls(model_id: str) -> tuple[str, str | None, bool]:
     Since CLI 11.1, ACP's ``model`` option contains one representative per
     family/pair. Its separate controls select the variant. Fusion's sidekick
     is part of the model group; effort and speed apply to the lead only.
-    ``fast`` is true for either ``-fast`` or ``-priority``.
+    ``fast`` is true for ``-fast``, ``-priority``, or SWE-2's ``-lightning``.
     """
     prefix = ""
     suffix = ""
@@ -40,7 +40,9 @@ def model_controls(model_id: str) -> tuple[str, str | None, bool]:
     context = ""
     if variant.endswith("-1m"):
         variant, context = variant[:-3], "-1m"
-    fast = variant.endswith(("-fast", "-priority"))
+    fast = variant.endswith(("-fast", "-priority")) or (
+        variant.startswith("swe-2-") and variant.endswith("-lightning")
+    )
     if fast:
         variant = variant.rsplit("-", 1)[0]
     match = _THOUGHT_SUFFIX.search(variant)

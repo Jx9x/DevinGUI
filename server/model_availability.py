@@ -42,8 +42,16 @@ def refresh_catalogue(
     if cli_models:
         # Availability comes from the same command the user sees in
         # Devin. An old team cache must not hide newly released models.
+        # SWE-2 Lightning is omitted by `models list` in CLI 11.3. Retain
+        # only cached, team-allowed variants whose standard model is listed.
+        lightning_ids = {
+            mid for mid in allowed_ids
+            if mid.startswith("swe-2-") and mid.endswith("-lightning")
+            and cached.get(mid, {}).get("family") == "swe-2"
+            and mid.removesuffix("-lightning") in cli_models
+        }
         _overlay_cli_metadata(data["models"], cached, id_map, cli_models)
-        allowed_ids = set(cli_models)
+        allowed_ids = set(cli_models) | lightning_ids
         _resolve_fusion_metadata(cached)
 
     if not cached:

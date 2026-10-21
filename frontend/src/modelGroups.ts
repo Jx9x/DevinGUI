@@ -1,7 +1,7 @@
 // Grouping/selection logic for the model picker — one row per base model
 // (with a reasoning-level dropdown) plus fusion rows (lead level, sidekick
 // model, sidekick level).  Pure functions: no React, so they are unit-tested
-// directly.  Callers pass already-filtered model lists (selectable, non-fast).
+// directly. Callers pass selectable models allowed by the visibility policy.
 
 import type { ModelInfo } from "./types";
 
@@ -63,6 +63,17 @@ export interface FusionGroup {
 
 export type ModelGroup = BaseGroup | FusionGroup;
 
+/** Keep Fast variants hidden, except standalone SWE-2 Lightning. */
+export function isModelVisible(model: ModelInfo): boolean {
+  return (
+    !model.is_fast ||
+    (!model.fusion &&
+      model.family === "swe-2" &&
+      model.id.startsWith("swe-2-") &&
+      model.id.endsWith("-lightning"))
+  );
+}
+
 /** Group key for any model: `fusion:<lead_family>` for fusion combos, else
  * `family ?? id`. */
 export function groupKeyOf(m: ModelInfo): string {
@@ -115,8 +126,7 @@ function variantLabel(m: ModelInfo): string {
   return stripped || "Default";
 }
 
-/** Build groups from a model list.  Callers pass already-filtered models
- * (selectable, non-fast). */
+/** Build groups from models already filtered for availability and visibility. */
 export function buildModelGroups(models: ModelInfo[]): {
   base: BaseGroup[];
   fusion: FusionGroup[];
@@ -138,8 +148,7 @@ export function buildModelGroups(models: ModelInfo[]): {
   for (const [key, members] of baseMap) {
     const sorted = [...members].sort(
       (a, b) =>
-        compareReasoning(a.reasoning, b.reasoning) ||
-        a.display_name.localeCompare(b.display_name)
+        compareReasoning(a.reasoning, b.reasoning) || a.display_name.localeCompare(b.display_name)
     );
     // Reasoning labels only work when they distinguish every variant.
     const distinctReasoning =
@@ -253,8 +262,7 @@ export function resolveFusion(
   sel: FusionSelection,
   lastUsed: Record<string, string>
 ): string {
-  const sk =
-    group.sidekicks.find((s) => s.family === sel.sidekickFamily) ?? group.sidekicks[0];
+  const sk = group.sidekicks.find((s) => s.family === sel.sidekickFamily) ?? group.sidekicks[0];
   if (!sk) return group.combos[0]?.id ?? "";
   const skLevel = sk.levels.some((l) => l.key === sel.sidekickLevel)
     ? sel.sidekickLevel

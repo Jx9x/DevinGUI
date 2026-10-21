@@ -52,11 +52,40 @@ def controls_sent(request):
     ("family-ultra-priority", ("family", "ultra", True)),
     ("family-max-fast-1m", ("family-1m", "max", True)),
     ("family-max-1m-fast", ("family-max-1m", None, True)),
+    ("swe-2-high-lightning", ("swe-2", "high", True)),
+    ("swe-2-medium-lightning", ("swe-2", "medium", True)),
+    ("swe-2-max-lightning", ("swe-2", "max", True)),
+    ("swe-1.7-lightning", ("swe-1.7-lightning", None, False)),
     ("fusion-lead-xhigh-fast-sidekick-helper-max", ("fusion-lead-sidekick-helper-max", "xhigh", True)),
     ("family-unknown", ("family-unknown", None, False)),
 ])
 def test_model_controls_preserve_suffix_order_and_sidekick(variant, expected):
     assert _model_controls(variant) == expected
+
+
+@pytest.mark.parametrize("level", ["medium", "high", "max"])
+async def test_swe2_lightning_selects_and_confirms_effort_and_fast_speed(client, level):
+    def swe_options(thought="high", speed="standard"):
+        result = options(model="swe-2-high", thought=thought, speed=speed, values=["swe-2-high"])
+        result[1]["options"] = [{"value": value} for value in ("medium", "high", "max")]
+        return result
+
+    client._session_config_options = swe_options()
+    request = replies(client, [swe_options(), swe_options(level), swe_options(level, "fast")])
+    variant = f"swe-2-{level}-lightning"
+    assert await client.set_session_model("session", variant) == variant
+    assert controls_sent(request) == [
+        ("model", "swe-2-high"), ("thought_level", level), ("speed", "fast"),
+    ]
+
+
+@pytest.mark.parametrize("speed_values,final_speed", [(["standard"], "standard"), (["standard", "fast"], "standard")])
+async def test_swe2_lightning_rejects_missing_or_unconfirmed_fast_speed(client, speed_values, final_speed):
+    client._session_config_options = options(model="swe-2-high", values=["swe-2-high"])
+    final = options(model="swe-2-high", speed=final_speed, speed_values=speed_values)
+    replies(client, [options(model="swe-2-high"), final, final])
+    with pytest.raises(ModelNotAppliedError, match="speed"):
+        await client.set_session_model("session", "swe-2-high-lightning")
 
 
 def test_config_option_uses_first_matching_dictionary():
