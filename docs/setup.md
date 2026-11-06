@@ -110,9 +110,8 @@ releases. Each GUI release is tested against one CLI version, listed in
 differs and check the database schema, but newer CLI releases can still break
 history display or compaction.
 
-The **3000.11.92** compatibility check covers CLI version/flag parsing, an
-unauthenticated ACP handshake, the CLI's empty database and embedded migrations,
-read-only history and export, and automated ACP/UI regression tests using
-synthetic data. It does not include a signed-in inference run. The new
-`DEVIN_SESSIONS_DIR` option is supported;
-see the [CLI release notes](https://docs.devin.ai/cli/changelog/stable#v3000-11-92).
+The **3000.11.234** compatibility check covers CLI version and flag parsing,
+signed-out ACP session creation and resume, and upgrading a test SQLite database
+from 3000.11.92. Automated tests cover read-only history, export, and ACP/UI
+behavior with synthetic data. The SQLite checks include the `DEVIN_SESSIONS_DIR`
+override. See the [release notes for that option](https://docs.devin.ai/cli/changelog/stable#v3000-11-92).

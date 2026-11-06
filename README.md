@@ -43,7 +43,7 @@ Not affiliated with Cognition. Uses your own Devin CLI installation and account.
 - Windows (macOS, Linux, and WSL are untested)
 - [Python 3.12+](https://www.python.org/downloads/windows/)
 - [Node.js](https://nodejs.org/) 22.13+ (setup only)
-- [Devin CLI](https://docs.devin.ai/cli), compatibility checked with **3000.11.92**
+- [Devin CLI](https://docs.devin.ai/cli), compatibility checked with **3000.11.234**
   (other versions show a warning; see [check scope](docs/setup.md#compatibility-with-devin-cli-updates))
 
 ## Quick start

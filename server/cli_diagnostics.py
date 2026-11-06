@@ -6,7 +6,7 @@ import threading
 import time
 from pathlib import Path
 
-TESTED_CLI_VERSION = "3000.11.92"
+TESTED_CLI_VERSION = "3000.11.234"
 _PROBE_TIMEOUT = 5
 # The CLI can fetch remote feature flags before reporting sign-in.
 _AUTH_PROBE_TIMEOUT = 30
